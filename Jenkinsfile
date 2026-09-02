@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "testing-cicd-project"
+        IMAGE_NAME = "nikhleshtest/testing-cicd-project"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
@@ -83,9 +83,57 @@ pipeline {
             }
         }
 
+        stage('Docker Push') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
+
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push ${IMAGE_NAME}:latest
+
+                        docker logout
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
+
+                    kubectl set image deployment/testing-cicd-project \
+                        testing-cicd-project=${IMAGE_NAME}:${IMAGE_TAG}
+
+                    kubectl rollout status deployment/testing-cicd-project \
+                        --timeout=120s
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                    kubectl get deployment testing-cicd-project
+                    kubectl get pods -l app=testing-cicd-project -o wide
+                    kubectl get svc testing-cicd-project
+                '''
+            }
+        }
     }
 
     post {
+
         always {
             sh '''
                 docker rm -f testing-cicd-project-test 2>/dev/null || true

@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: testing-cicd-project
-          image: testing-cicd-project:8
-          imagePullPolicy: Never
+          image: nikhleshtest/testing-cicd-project:latest
+          imagePullPolicy: Always
 
           ports:
             - containerPort: 5000

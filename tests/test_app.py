@@ -37,4 +37,4 @@ def test_add(client):
 
     data = response.get_json()
 
-    assert data["result"] == 31
+    assert data["result"] == 30

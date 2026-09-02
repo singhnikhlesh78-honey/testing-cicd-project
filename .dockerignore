@@ -1,0 +1,8 @@
+venv/
+jenkins-venv/
+.git/
+.gitignore
+.pytest_cache/
+__pycache__/
+*.pyc
+tests/
